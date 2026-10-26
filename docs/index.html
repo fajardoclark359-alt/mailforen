@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mailforen | Advanced OSINT Toolkit for Email Forensics & DFIR</title>
+  <meta name="description"
+    content="mailforen is a CLI-first, passive-first OSINT toolkit for email forensics, phishing investigations, and digital forensics & incident response.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0b1026;
+      --bg-2: #10162b;
+      --card: #151b2f;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5f5;
+      --text-tertiary: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #22d3ee;
+      --danger: #f87171;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --border: rgba(148, 163, 184, 0.25);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 55%), var(--bg);
+      color: var(--text-primary);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(180deg, rgba(11, 16, 38, 0.95) 0%, rgba(11, 16, 38, 0.8) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      margin: 0 auto;
+      max-width: 1120px;
+      padding: 0.85rem 1.5rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-weight: 600;
+    }
+
+    .logo-mark {
+      display: grid;
+      place-items: center;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.9), rgba(34, 211, 238, 0.6));
+      box-shadow: 0 25px 60px -30px rgba(56, 189, 248, 0.9);
+    }
+
+    .logo-mark i {
+      font-size: 1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.8rem;
+      list-style: none;
+      color: var(--text-tertiary);
+      font-size: 0.98rem;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-primary);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 999px;
+      padding: 0.7rem 1.6rem;
+      font-weight: 500;
+      border: 1px solid transparent;
+      transition: all 160ms ease;
+    }
+
+    .btn-ghost {
+      color: var(--text-secondary);
+      border-color: transparent;
+    }
+
+    .btn-ghost:hover {
+      color: var(--text-primary);
+    }
+
+    .btn-primary {
+      background: linear-gradient(90deg, rgba(56, 189, 248, 0.95), rgba(34, 211, 238, 0.9));
+      color: #0f172a;
+      box-shadow: 0 40px 80px -60px rgba(56, 189, 248, 1);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.05);
+    }
+
+    main {
+      margin: 0 auto;
+      max-width: 1120px;
+      padding: 0 1.5rem;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2.5rem;
+      align-items: center;
+      padding: clamp(4rem, 10vw, 7rem) 0 clamp(3rem, 8vw, 6rem);
+    }
+
+    .hero-content {
+      grid-column: 1 / span 7;
+      display: flex;
+      flex-direction: column;
+      gap: 1.8rem;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      color: var(--accent);
+      font-size: 0.95rem;
+      width: fit-content;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 8vw, 5.2rem);
+      line-height: 1.02;
+      letter-spacing: -0.08em;
+    }
+
+    .hero p {
+      max-width: 580px;
+      color: var(--text-secondary);
+      font-size: clamp(1.05rem, 2vw, 1.2rem);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      color: var(--text-tertiary);
+      font-size: 0.98rem;
+    }
+
+    .hero-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .hero-card {
+      grid-column: 8 / span 5;
+      position: relative;
+    }
+
+    .terminal {
+      position: relative;
+      border-radius: 1.2rem;
+      border: 1px solid var(--border);
+      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.16), transparent 70%), var(--card);
+      box-shadow: 0 120px 200px -160px rgba(56, 189, 248, 0.8);
+      overflow: hidden;
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dots {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .dot {
+      width: 0.6rem;
+      height: 0.6rem;
+      border-radius: 50%;
+    }
+
+    .dot-red {
+      background: rgba(248, 113, 113, 0.9);
+    }
+
+    .dot-amber {
+      background: rgba(251, 191, 36, 0.9);
+    }
+
+    .dot-green {
+      background: rgba(52, 211, 153, 0.9);
+    }
+
+    .terminal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      padding: 1.8rem 1.6rem;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.98rem;
+    }
+
+    .line {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .prompt {
+      color: var(--accent);
+    }
+
+    .command {
+      color: var(--text-primary);
+    }
+
+    .output {
+      color: var(--text-tertiary);
+      padding-left: 1.6rem;
+    }
+
+    .output-accent {
+      color: var(--success);
+    }
+
+    section {
+      display: flex;
+      flex-direction: column;
+      gap: 2.6rem;
+      padding: clamp(2rem, 6vw, 4.5rem) 0;
+    }
+
+    .section-header {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 720px;
+    }
+
+    .section-header h2 {
+      font-size: clamp(2rem, 6vw, 3.6rem);
+      letter-spacing: -0.07em;
+    }
+
+    .section-header p {
+      color: var(--text-secondary);
+      font-size: clamp(1.02rem, 2vw, 1.16rem);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1.2rem;
+    }
+
+    .card {
+      grid-column: span 4;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      border-radius: 1rem;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.14) 0%, rgba(21, 27, 47, 0.95) 100%);
+      padding: 2rem;
+      min-height: 280px;
+    }
+
+    .card-wide {
+      grid-column: span 6;
+    }
+
+    .card-icon {
+      display: grid;
+      place-items: center;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.9), rgba(34, 211, 238, 0.5));
+      color: #0f172a;
+    }
+
+    .card h3 {
+      font-size: 1.6rem;
+      letter-spacing: -0.05em;
+    }
+
+    .card p {
+      color: var(--text-secondary);
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      color: var(--text-tertiary);
+      list-style: none;
+    }
+
+    .card-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .card-list i {
+      color: var(--accent);
+    }
+
+    .disclaimer-banner {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(248, 113, 113, 0.6);
+      background: radial-gradient(circle at top, rgba(248, 113, 113, 0.18), transparent 70%), var(--card);
+      padding: clamp(2rem, 6vw, 3rem);
+      text-align: center;
+      align-items: center;
+    }
+
+    .disclaimer-banner h2 {
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      letter-spacing: -0.06em;
+    }
+
+    .disclaimer-banner p {
+      max-width: 760px;
+      color: var(--text-secondary);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      margin-top: clamp(3rem, 8vw, 6rem);
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+      margin: 0 auto;
+      max-width: 1120px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: var(--text-tertiary);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.2rem;
+    }
+
+    @media (max-width: 1080px) {
+      .hero-content {
+        grid-column: 1 / span 12;
+      }
+
+      .hero-card {
+        grid-column: 1 / span 12;
+      }
+
+      .card {
+        grid-column: span 6;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .nav-links {
+        display: none;
+      }
+
+      .card {
+        grid-column: 1 / span 12;
+      }
+
+      .card-wide {
+        grid-column: 1 / span 12;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <nav>
+      <div class="logo">
+        <div class="logo-mark">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <span>mailforen</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#workflow">Workflow</a></li>
+        <li><a href="#reports">Reporting</a></li>
+        <li><a href="#disclaimer">Disclaimer</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a class="btn btn-ghost" href="https://github.com/fajardoclark359-alt/mailforen" target="_blank"
+          rel="noopener">
+          <i class="fa-brands fa-github"></i>
+          GitHub
+        </a>
+        <a class="btn btn-primary" href="https://github.com/fajardoclark359-alt/mailforen#readme" target="_blank"
+          rel="noopener">
+          <i class="fa-solid fa-book"></i>
+          Documentation
+        </a>
+      </div>
+    </nav>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <span class="eyebrow">
+          <i class="fa-solid fa-bolt"></i>
+          CLI-first • Passive-first • Evidence-friendly
+        </span>
+        <h1>Advanced OSINT for Email Forensics &amp; DFIR</h1>
+        <p>
+          mailforen is a modular toolkit built for phishing incident response, email header analysis, and defensive
+          digital forensics. Correlate infrastructure, trace redirects, pivot on identities, and export audit-ready
+          reports from a single command-line interface.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://github.com/fajardoclark359-alt/mailforen" target="_blank"
+            rel="noopener">
+            <i class="fa-solid fa-download"></i>
+            View on GitHub
+          </a>
+          <a class="btn btn-ghost" href="#features">
+            <i class="fa-solid fa-arrow-down"></i>
+            Explore features
+          </a>
+        </div>
+        <div class="hero-meta">
+          <div class="hero-meta-item">
+            <i class="fa-solid fa-shield"></i>
+            Passive by default
+          </div>
+          <div class="hero-meta-item">
+            <i class="fa-solid fa-database"></i>
+            SQLite case tracking
+          </div>
+          <div class="hero-meta-item">
+            <i class="fa-solid fa-file-export"></i>
+            HTML • Markdown • JSON • PDF
+          </div>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="terminal">
+          <div class="terminal-header">
+            <div class="dots">
+              <span class="dot dot-red"></span>
+              <span class="dot dot-amber"></span>
+              <span class="dot dot-green"></span>
+            </div>
+            <span style="color: var(--text-tertiary); font-size: 0.9rem;">mailforen</span>
+            <div style="width: 2.6rem;"></div>
+          </div>
+          <div class="terminal-body">
+            <div class="line">
+              <span class="prompt">➜</span>
+              <span class="command">mailforen case new "Phishing-Incident-001" --target lookalike.example.net</span>
+            </div>
+            <div class="output output-accent">✓ Created case Phishing-Incident-001 (ID: 1)</div>
+            <div class="line">
+              <span class="prompt">➜</span>
+              <span class="command">mailforen email headers suspicious.eml --case-id 1</span>
+            </div>
+            <div class="output">Analyzing headers... Originating IPs extracted &amp; hop chain mapped</div>
+            <div class="line">
+              <span class="prompt">➜</span>
+              <span class="command">mailforen email auth lookalike.example.net --case-id 1</span>
+            </div>
+            <div class="output">SPF: found • DMARC: missing • MX: enumerated</div>
+            <div class="line">
+              <span class="prompt">➜</span>
+              <span class="command">mailforen report generate --case-id 1 --format html</span>
+            </div>
+            <div class="output output-accent">✓ Evidence report saved to ~/.mailforen/reports/</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="features">
+      <div class="section-header">
+        <span class="eyebrow">Capabilities</span>
+        <h2>Everything you need for email-centric investigations</h2>
+        <p>
+          Built with a defensive mindset, mailforen focuses on high-signal, publicly accessible data. Every action is
+          logged with timestamps to preserve investigative context.
+        </p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <div class="card-icon">
+            <i class="fa-solid fa-envelope-circle-check"></i>
+          </div>
+          <h3>Email Forensics</h3>
+          <p>Parse raw .eml files, reconstruct the Received hop path, extract originating IPs, and inspect
+            authentication results.</p>
+          <ul class="card-list">
+            <li><i class="fa-solid fa-check"></i>Header chain reconstruction</li>
+            <li><i class="fa-solid fa-check"></i>SPF, DKIM, DMARC &amp; MX checks</li>
+            <li><i class="fa-solid fa-check"></i>Phishing triage focused analysis</li>
+          </ul>
+        </article>
+        <article class="card">
+          <div class="card-icon">
+            <i class="fa-solid fa-diagram-project"></i>
+          </div>
+          <h3>Infrastructure Intel</h3>
+          <p>Map DNS, hosting context, and historical certificate data to uncover related assets and pivot points.</p>
+          <ul class="card-list">
+            <li><i class="fa-solid fa-check"></i>Domain DNS (A/AAAA/MX/NS/TXT/CNAME)</li>
+            <li><i class="fa-solid fa-check"></i>IP reverse DNS &amp; enrichment</li>
+            <li><i class="fa-solid fa-check"></i>Certificate Transparency via crt.sh</li>
+          </ul>
+        </article>
+        <article class="card">
+          <div class="card-icon">
+            <i class="fa-solid fa-link"></i>
+          </div>
+          <h3>Pivoting &amp; Tracing</h3>
+          <p>Safely follow redirects, extract file metadata, and generate passive username pivots across common
+            platforms.</p>
+          <ul class="card-list">
+            <li><i class="fa-solid fa-check"></i>Safe URL redirect tracing</li>
+            <li><i class="fa-solid fa-check"></i>EXIF &amp; file metadata extraction</li>
+            <li><i class="fa-solid fa-check"></i>Passive username correlation</li>
+          </ul>
+        </article>
+        <article class="card card-wide">
+          <div class="card-icon">
+            <i class="fa-solid fa-folder-open"></i>
+          </div>
+          <h3>Case-Centric Workflow</h3>
+          <p>Keep every lookup tied to an investigation. Findings, inputs, results, risk levels, and timestamps are
+            stored in a local SQLite database for clean handoffs and repeatability.</p>
+          <ul class="card-list">
+            <li><i class="fa-solid fa-check"></i><code>mailforen case new/list/show</code></li>
+            <li><i class="fa-solid fa-check"></i>Attach any module output to a case with <code>--case-id</code></li>
+            <li><i class="fa-solid fa-check"></i>Fully local by default – no cloud telemetry</li>
+          </ul>
+        </article>
+        <article class="card card-wide">
+          <div class="card-icon">
+            <i class="fa-solid fa-file-lines"></i>
+          </div>
+          <h3>Evidence-Ready Reporting</h3>
+          <p>Generate clean, shareable reports in the format your workflow demands. Designed for tickets, case notes,
+            and SIEM ingestion.</p>
+          <ul class="card-list">
+            <li><i class="fa-solid fa-check"></i>Markdown – ideal for Git/notes</li>
+            <li><i class="fa-solid fa-check"></i>HTML – clean, human-readable</li>
+            <li><i class="fa-solid fa-check"></i>JSON – structured for automation/SIEM</li>
+            <li><i class="fa-solid fa-check"></i>PDF – formal documentation (graceful fallback if tooling missing)</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+    <section id="workflow">
+      <div class="section-header">
+        <span class="eyebrow">Quick Start</span>
+        <h2>From suspicious email to actionable report in minutes</h2>
+        <p>Install locally, create a case, run your checks, and generate a consolidated report.</p>
+      </div>
+      <div class="terminal">
+        <div class="terminal-header">
+          <div class="dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-amber"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span style="color: var(--text-tertiary); font-size: 0.9rem;">setup.sh</span>
+          <div style="width: 2.6rem;"></div>
+        </div>
+        <div class="terminal-body">
+          <div class="line">
+            <span class="prompt">➜</span>
+            <span class="command">git clone https://github.com/fajardoclark359-alt/mailforen.git</span>
+          </div>
+          <div class="line">
+            <span class="prompt">➜</span>
+            <span class="command">cd mailforen && pip install -e .</span>
+          </div>
+          <div class="line">
+            <span class="prompt">➜</span>
+            <span class="command">mailforen version</span>
+          </div>
+          <div class="output output-accent">mailforen v0.1.0 | For authorized use only</div>
+          <div class="line">
+            <span class="prompt">➜</span>
+            <span class="command">mailforen case new "Incident-001" --target phishing.example.org</span>
+          </div>
+          <div class="line">
+            <span class="prompt">➜</span>
+            <span class="command">mailforen email headers ./suspicious.eml --case-id 1</span>
+          </div>
+          <div class="line">
+            <span class="prompt">➜</span>
+            <span class="command">mailforen domain intel phishing.example.org --case-id 1</span>
+          </div>
+          <div class="line">
+            <span class="prompt">➜</span>
+            <span class="command">mailforen report generate --case-id 1 --format markdown</span>
+          </div>
+          <div class="output output-accent">✓ Report saved to ~/.mailforen/reports/</div>
+        </div>
+      </div>
+    </section>
+    <section id="disclaimer">
+      <div class="disclaimer-banner">
+        <span class="eyebrow" style="border-color: rgba(248, 113, 113, 0.8); color: var(--danger);">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          Legal &amp; Ethical Use Only
+        </span>
+        <h2>For authorized investigations only</h2>
+        <p>
+          mailforen is designed strictly for legitimate, authorized security investigations, phishing incident response,
+          and defensive OSINT. Use of this tool for unauthorized reconnaissance, harassment, or malicious purposes is
+          strictly prohibited and may be illegal in your jurisdiction. The authors assume no liability for misuse.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-ghost" href="https://github.com/fajardoclark359-alt/mailforen/blob/master/DISCLAIMER.md"
+            target="_blank" rel="noopener">
+            <i class="fa-solid fa-scale-balanced"></i>
+            Read full disclaimer
+          </a>
+          <a class="btn btn-primary" href="https://github.com/fajardoclark359-alt/mailforen" target="_blank"
+            rel="noopener">
+            <i class="fa-brands fa-github"></i>
+            Contribute on GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="footer-inner">
+      <div class="logo">
+        <div class="logo-mark">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <span>mailforen</span>
+      </div>
+      <p>Advanced OSINT toolkit for email forensics and digital investigations • Built for defensive security.</p>
+      <div class="footer-links">
+        <a href="https://github.com/fajardoclark359-alt/mailforen" target="_blank" rel="noopener"><i
+            class="fa-brands fa-github"></i></a>
+        <a href="https://github.com/fajardoclark359-alt/mailforen#readme" target="_blank" rel="noopener"><i
+            class="fa-solid fa-book"></i></a>
+        <a href="https://github.com/fajardoclark359-alt/mailforen/issues" target="_blank" rel="noopener"><i
+            class="fa-solid fa-bug"></i></a>
+      </div>
+      <p>© 2026 mailforen contributors • MIT License</p>
+    </div>
+  </footer>
+</body>
+
+</html>
