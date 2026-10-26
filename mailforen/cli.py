@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 import typer
+import json
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
+from rich.syntax import Syntax
 from pathlib import Path
 from typing import Optional
 
 from .core.config import settings
 from .core.db import db
 from .core.logger import logger
+from .modules.email.headers import header_analyzer
+from .modules.email.auth import auth_checker
+from .modules.forensic.domain import domain_intel
+from .modules.forensic.ip import ip_intel
+from .modules.forensic.ct import ct_search
+from .modules.forensic.urltrace import url_tracer
+from .modules.forensic.filemeta import file_meta
+from .reports.generator import report_generator
+from .utils.validators import validators
 
 app = typer.Typer(
     name="mailforen",
@@ -124,50 +135,259 @@ def case_show(case_id: int):
     else:
         console.print("\n[yellow]No findings yet[/yellow]")
 
-# Placeholder commands for modules
+# Email commands
 @email_app.command("headers")
-def email_headers(analyze: bool = typer.Option(False), file: Optional[Path] = None):
-    """Analyze email headers"""
-    console.print("[yellow]Email header analysis - coming soon[/yellow]")
-    console.print("[cyan]Use: mailforen email headers analyze <file.eml>[/cyan]")
+def email_headers(file: Path = typer.Argument(..., help="Path to .eml file"), 
+                   case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+    """Analyze email headers from .eml file"""
+    if not file.exists():
+        console.print(f"[red]✗[/red] File not found: {file}")
+        raise typer.Exit(1)
+    
+    console.print(f"[cyan]Analyzing headers from {file}...[/cyan]")
+    results = header_analyzer.analyze_file(file)
+    
+    if "error" in results:
+        console.print(f"[red]✗[/red] {results['error']}")
+        raise typer.Exit(1)
+    
+    console.print(Panel.fit(
+        f"[bold]From:[/bold] {results['from']}\n"
+        f"[bold]To:[/bold] {results['to']}\n"
+        f"[bold]Subject:[/bold] {results['subject']}\n"
+        f"[bold]Date:[/bold] {results['date']}\n"
+        f"[bold]Message-ID:[/bold] {results['message_id']}",
+        title="Email Headers"
+    ))
+    
+    if results['originating_ips']:
+        console.print(f"\n[bold yellow]Originating IPs:[/bold yellow] {', '.join(results['originating_ips'])}")
+    
+    console.print(f"\n[bold]Received Chain ({len(results['received_chain'])} hops):[/bold]")
+    for hop in results['received_chain']:
+        console.print(f"  {hop['hop']}. {hop['raw'][:100]}...")
+    
+    if case_id:
+        db.add_finding(case_id, "email.headers", str(file), results, "info")
+        console.print(f"\n[green]✓[/green] Added to case {case_id}")
 
+@email_app.command("auth")
+def email_auth(domain: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+    """Check SPF, DKIM, DMARC for a domain"""
+    console.print(f"[cyan]Checking email authentication for {domain}...[/cyan]")
+    results = auth_checker.check_all(domain)
+    
+    # SPF
+    spf = results['spf']
+    if spf['found']:
+        console.print(f"[green]✓[/green] SPF: Found ({len(spf['records'])} record(s))")
+        for r in spf['records']:
+            console.print(f"  {r}")
+    else:
+        console.print(f"[red]✗[/red] SPF: Not found")
+    
+    # DMARC
+    dmarc = results['dmarc']
+    if dmarc['found']:
+        console.print(f"[green]✓[/green] DMARC: Found ({len(dmarc['records'])} record(s))")
+        for r in dmarc['records']:
+            console.print(f"  {r}")
+    else:
+        console.print(f"[red]✗[/red] DMARC: Not found")
+    
+    # MX
+    mx = results['mx']
+    if mx['found']:
+        console.print(f"[green]✓[/green] MX: Found ({len(mx['records'])} record(s))")
+        for r in mx['records']:
+            console.print(f"  {r['priority']} {r['exchange']}")
+    else:
+        console.print(f"[red]✗[/red] MX: Not found")
+    
+    if case_id:
+        db.add_finding(case_id, "email.auth", domain, results, "medium" if not spf['found'] or not dmarc['found'] else "low")
+        console.print(f"\n[green]✓[/green] Added to case {case_id}")
+
+# Domain commands
 @domain_app.command("intel")
-def domain_intel(domain: str):
-    """Domain intelligence gathering"""
-    console.print(f"[yellow]Domain intelligence for {domain} - coming soon[/yellow]")
+def domain_intel_cmd(domain: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+    """Gather domain intelligence"""
+    console.print(f"[cyan]Gathering intelligence for {domain}...[/cyan]")
+    results = domain_intel.get_all_records(domain)
+    
+    table = Table(title=f"DNS Records for {domain}")
+    table.add_column("Type", style="cyan")
+    table.add_column("Records")
+    
+    if results['a']: table.add_row("A", "\n".join(results['a']))
+    if results['aaaa']: table.add_row("AAAA", "\n".join(results['aaaa']))
+    if results['ns']: table.add_row("NS", "\n".join(results['ns']))
+    if results['mx']: 
+        mx_str = "\n".join([f"{r['priority']} {r['host']}" for r in results['mx']])
+        table.add_row("MX", mx_str)
+    if results['txt']: table.add_row("TXT", "\n".join(results['txt'][:5]))
+    
+    console.print(table)
+    
+    if case_id:
+        db.add_finding(case_id, "domain.intel", domain, results, "info")
+        console.print(f"\n[green]✓[/green] Added to case {case_id}")
 
+# IP commands
 @ip_app.command("intel")
-def ip_intel(ip: str):
-    """IP intelligence gathering"""
-    console.print(f"[yellow]IP intelligence for {ip} - coming soon[/yellow]")
+def ip_intel_cmd(ip: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+    """Gather IP intelligence"""
+    console.print(f"[cyan]Gathering intelligence for {ip}...[/cyan]")
+    results = ip_intel.get_info(ip)
+    
+    console.print(Panel.fit(
+        f"[bold]IP:[/bold] {results['ip']}\n"
+        f"[bold]Reverse DNS:[/bold] {results['reverse_dns'] or 'N/A'}",
+        title="IP Intelligence"
+    ))
+    
+    # Try ipinfo
+    asn_info = ip_intel.get_asn_info(ip)
+    if asn_info:
+        console.print(f"\n[bold]Organization:[/bold] {asn_info.get('org', 'N/A')}")
+        console.print(f"[bold]Location:[/bold] {asn_info.get('city', '')} {asn_info.get('region', '')} {asn_info.get('country', '')}")
+        console.print(f"[bold]ISP:[/bold] {asn_info.get('org', 'N/A')}")
+    
+    if case_id:
+        db.add_finding(case_id, "ip.intel", ip, {**results, **asn_info}, "info")
+        console.print(f"\n[green]✓[/green] Added to case {case_id}")
 
+# CT commands
 @ct_app.command("search")
-def ct_search(domain: str):
+def ct_search_cmd(domain: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
     """Search Certificate Transparency logs"""
-    console.print(f"[yellow]CT search for {domain} - coming soon[/yellow]")
+    console.print(f"[cyan]Searching CT logs for {domain}...[/cyan]")
+    results = ct_search.search(domain)
+    
+    if "error" in results:
+        console.print(f"[red]✗[/red] {results['error']}")
+        raise typer.Exit(1)
+    
+    console.print(f"[green]✓[/green] Found {results['certificates_found']} certificates")
+    console.print(f"[green]✓[/green] Found {len(results['unique_subdomains'])} unique subdomains")
+    
+    if results['unique_subdomains']:
+        table = Table(title="Discovered Subdomains")
+        table.add_column("Subdomain")
+        for sub in results['unique_subdomains'][:50]:  # Limit display
+            table.add_row(sub)
+        console.print(table)
+        if len(results['unique_subdomains']) > 50:
+            console.print(f"[yellow]... and {len(results['unique_subdomains']) - 50} more[/yellow]")
+    
+    if case_id:
+        db.add_finding(case_id, "ct.search", domain, results, "info")
+        console.print(f"\n[green]✓[/green] Added to case {case_id}")
 
+# URL commands
 @url_app.command("trace")
-def url_trace(url: str):
+def url_trace_cmd(url: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
     """Trace URL redirects"""
-    console.print(f"[yellow]URL tracing for {url} - coming soon[/yellow]")
+    console.print(f"[cyan]Tracing redirects for {url}...[/cyan]")
+    results = url_tracer.trace(url)
+    
+    if "error" in results:
+        console.print(f"[red]✗[/red] {results['error']}")
+        raise typer.Exit(1)
+    
+    console.print(Panel.fit(
+        f"[bold]Original:[/bold] {results['original_url']}\n"
+        f"[bold]Final:[/bold] {results['final_url']}\n"
+        f"[bold]Redirects:[/bold] {results['total_redirects']}",
+        title="URL Trace"
+    ))
+    
+    table = Table(title="Redirect Chain")
+    table.add_column("Step")
+    table.add_column("Status")
+    table.add_column("URL")
+    
+    for hop in results['redirect_chain']:
+        table.add_row(str(hop['step']), str(hop['status_code']), hop['url'][:80])
+    
+    console.print(table)
+    
+    if case_id:
+        db.add_finding(case_id, "url.trace", url, results, "info")
+        console.print(f"\n[green]✓[/green] Added to case {case_id}")
 
-@user_app.command("pivot")
-def user_pivot(username: str):
-    """Pivot on username across platforms"""
-    console.print(f"[yellow]Username pivot for {username} - coming soon[/yellow]")
-
+# File commands
 @file_app.command("meta")
-def file_meta(file: Path):
+def file_meta_cmd(file: Path = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
     """Extract file metadata"""
-    console.print(f"[yellow]File metadata extraction for {file} - coming soon[/yellow]")
+    console.print(f"[cyan]Extracting metadata from {file}...[/cyan]")
+    results = file_meta.extract(file)
+    
+    if "error" in results:
+        console.print(f"[red]✗[/red] {results['error']}")
+        raise typer.Exit(1)
+    
+    console.print(Panel.fit(
+        f"[bold]Filename:[/bold] {results['filename']}\n"
+        f"[bold]Size:[/bold] {results['size_human']} ({results['size_bytes']} bytes)\n"
+        f"[bold]Created:[/bold] {results['created']}\n"
+        f"[bold]Modified:[/bold] {results['modified']}",
+        title="File Metadata"
+    ))
+    
+    if results.get('exif'):
+        console.print(f"\n[bold]EXIF Data ({len(results['exif'])} tags):[/bold]")
+        for k, v in list(results['exif'].items())[:20]:
+            console.print(f"  {k}: {v[:60]}")
+    
+    if case_id:
+        db.add_finding(case_id, "file.meta", str(file), results, "info")
+        console.print(f"\n[green]✓[/green] Added to case {case_id}")
 
+# User commands
+@user_app.command("pivot")
+def user_pivot_cmd(username: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+    """Pivot on username across platforms (passive checks)"""
+    console.print(f"[cyan]Pivoting on username: {username}[/cyan]")
+    console.print("[yellow]Note: This performs passive checks on public endpoints[/yellow]")
+    
+    # Basic passive checks
+    results = {
+        "username": username,
+        "checks": []
+    }
+    
+    # Could add more platforms here
+    platforms = ["github.com", "twitter.com", "instagram.com", "reddit.com"]
+    for platform in platforms:
+        results["checks"].append({
+            "platform": platform,
+            "url": f"https://{platform}/{username}",
+            "method": "passive_url_construction"
+        })
+    
+    console.print(f"[green]✓[/green] Generated {len(platforms)} potential profile URLs")
+    for check in results["checks"]:
+        console.print(f"  • {check['url']}")
+    
+    if case_id:
+        db.add_finding(case_id, "user.pivot", username, results, "info")
+        console.print(f"\n[green]✓[/green] Added to case {case_id}")
+
+# Report commands
 @report_app.command("generate")
-def report_generate(
-    case_id: int = typer.Option(..., "--case-id"),
+def report_generate_cmd(
+    case_id: int = typer.Option(..., "--case-id", "-c"),
     format: str = typer.Option("html", "--format", "-f", help="Report format (html, markdown, pdf, json)")
 ):
     """Generate investigation report"""
-    console.print(f"[yellow]Generating {format} report for case {case_id} - coming soon[/yellow]")
+    try:
+        console.print(f"[cyan]Generating {format} report for case {case_id}...[/cyan]")
+        filepath = report_generator.generate(case_id, format)
+        console.print(f"[green]✓[/green] Report saved: {filepath}")
+    except Exception as e:
+        console.print(f"[red]✗[/red] {e}")
+        raise typer.Exit(1)
 
 if __name__ == "__main__":
     app()
