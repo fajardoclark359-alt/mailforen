@@ -35,7 +35,6 @@ dependencies = [
     "checkdmarc>=4.7.0",
     "exifread>=3.0.0",
     "python-magic>=0.4.27",
-    "weasyhtml>=60.1; sys_platform != 'win32'",
     "pdfkit>=1.0.0",
 ]
 
