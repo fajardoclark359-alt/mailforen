@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+
+# mailforen
+.mailforen/
+.env
+*.log
+
+# Reports
+*.html
+*.pdf
+!docs/*.html
+!docs/*.pdf
+
