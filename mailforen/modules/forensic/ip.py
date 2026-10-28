@@ -1,12 +1,13 @@
 import socket
-import dns.resolver
-from typing import Dict, Any
+from typing import Any
+
 from ...core.logger import logger
+
 
 class IPIntel:
     """IP intelligence gathering"""
     
-    def get_info(self, ip: str) -> Dict[str, Any]:
+    def get_info(self, ip: str) -> dict[str, Any]:
         """Get IP information"""
         results = {
             "ip": ip,
@@ -24,7 +25,7 @@ class IPIntel:
             logger.debug(f"Reverse DNS failed for {ip}: {e}")
             return None
     
-    def get_asn_info(self, ip: str) -> Dict[str, Any]:
+    def get_asn_info(self, ip: str) -> dict[str, Any]:
         """Get ASN info via ipinfo.io (free, no key needed for basic)"""
         from ...core.http import http_client
         try:

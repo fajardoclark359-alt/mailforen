@@ -1,13 +1,14 @@
-from pathlib import Path
-from typing import Dict, Any
-import os
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
 from ...core.logger import logger
+
 
 class FileMetaExtractor:
     """Extract metadata from files"""
     
-    def extract(self, file_path: Path) -> Dict[str, Any]:
+    def extract(self, file_path: Path) -> dict[str, Any]:
         """Extract file metadata"""
         try:
             if not file_path.exists():
@@ -32,7 +33,7 @@ class FileMetaExtractor:
                     with open(file_path, 'rb') as f:
                         tags = exifread.process_file(f)
                     exif_data = {}
-                    for tag in tags.keys():
+                    for tag in tags:
                         if tag not in ('JPEGThumbnail', 'TIFFThumbnail', 'Filename', 'EXIF MakerNote'):
                             exif_data[tag] = str(tags[tag])
                     if exif_data:

@@ -1,11 +1,13 @@
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime
-from typing import Dict, Any
+
 from jinja2 import Template
-from ..core.db import db
+
 from ..core.config import settings
+from ..core.db import db
 from ..core.logger import logger
+
 
 class ReportGenerator:
     """Generate reports in multiple formats"""
@@ -24,7 +26,7 @@ class ReportGenerator:
         report_data = {
             "case": case,
             "findings": findings,
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
             "tool": "mailforen v0.1.0"
         }
         
@@ -42,14 +44,14 @@ class ReportGenerator:
         else:
             raise ValueError(f"Unsupported format: {format}")
     
-    def generate_json(self, data: Dict, filename: str) -> Path:
+    def generate_json(self, data: dict, filename: str) -> Path:
         filepath = self.reports_dir / f"{filename}.json"
         with open(filepath, 'w') as f:
             json.dump(data, f, indent=2)
         logger.info(f"JSON report saved: {filepath}")
         return filepath
     
-    def generate_markdown(self, data: Dict, filename: str) -> Path:
+    def generate_markdown(self, data: dict, filename: str) -> Path:
         filepath = self.reports_dir / f"{filename}.md"
         md = f"""# Investigation Report
 
@@ -83,7 +85,7 @@ class ReportGenerator:
         logger.info(f"Markdown report saved: {filepath}")
         return filepath
     
-    def generate_html(self, data: Dict, filename: str) -> Path:
+    def generate_html(self, data: dict, filename: str) -> Path:
         filepath = self.reports_dir / f"{filename}.html"
         template = Template("""
 <!DOCTYPE html>
@@ -140,7 +142,7 @@ class ReportGenerator:
         logger.info(f"HTML report saved: {filepath}")
         return filepath
     
-    def generate_pdf(self, data: Dict, filename: str) -> Path:
+    def generate_pdf(self, data: dict, filename: str) -> Path:
         filepath = self.reports_dir / f"{filename}.pdf"
         # Generate HTML first then convert
         html_path = self.generate_html(data, filename)

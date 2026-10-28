@@ -1,6 +1,6 @@
-import re
 import ipaddress
-from typing import Optional
+import re
+
 
 class Validators:
     @staticmethod
@@ -27,7 +27,7 @@ class Validators:
         return bool(re.match(pattern, url))
     
     @staticmethod
-    def extract_domain_from_email(email: str) -> Optional[str]:
+    def extract_domain_from_email(email: str) -> str | None:
         if Validators.is_email(email):
             return email.split('@')[1]
         return None

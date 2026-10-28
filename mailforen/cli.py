@@ -1,25 +1,20 @@
 #!/usr/bin/env python3
-import typer
-import json
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-from rich.syntax import Syntax
 from pathlib import Path
-from typing import Optional
 
-from .core.config import settings
+import typer
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
 from .core.db import db
-from .core.logger import logger
-from .modules.email.headers import header_analyzer
 from .modules.email.auth import auth_checker
-from .modules.forensic.domain import domain_intel
-from .modules.forensic.ip import ip_intel
+from .modules.email.headers import header_analyzer
 from .modules.forensic.ct import ct_search
-from .modules.forensic.urltrace import url_tracer
+from .modules.forensic.domain import domain_intel
 from .modules.forensic.filemeta import file_meta
+from .modules.forensic.ip import ip_intel
+from .modules.forensic.urltrace import url_tracer
 from .reports.generator import report_generator
-from .utils.validators import validators
 
 app = typer.Typer(
     name="mailforen",
@@ -72,8 +67,8 @@ def disclaimer():
 @case_app.command("new")
 def case_new(
     name: str,
-    target: Optional[str] = typer.Option(None, "--target", "-t", help="Target domain/email/IP"),
-    description: Optional[str] = typer.Option(None, "--desc", "-d", help="Case description")
+    target: str | None = typer.Option(None, "--target", "-t", help="Target domain/email/IP"),
+    description: str | None = typer.Option(None, "--desc", "-d", help="Case description")
 ):
     """Create a new investigation case"""
     try:
@@ -81,7 +76,7 @@ def case_new(
         console.print(f"[green]✓[/green] Created case [bold]{name}[/bold] (ID: {case_id})")
     except Exception as e:
         console.print(f"[red]✗[/red] {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 @case_app.command("list")
 def case_list():
@@ -138,7 +133,7 @@ def case_show(case_id: int):
 # Email commands
 @email_app.command("headers")
 def email_headers(file: Path = typer.Argument(..., help="Path to .eml file"), 
-                   case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+                   case_id: int | None = typer.Option(None, "--case-id", "-c")):
     """Analyze email headers from .eml file"""
     if not file.exists():
         console.print(f"[red]✗[/red] File not found: {file}")
@@ -172,7 +167,7 @@ def email_headers(file: Path = typer.Argument(..., help="Path to .eml file"),
         console.print(f"\n[green]✓[/green] Added to case {case_id}")
 
 @email_app.command("auth")
-def email_auth(domain: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+def email_auth(domain: str = typer.Argument(...), case_id: int | None = typer.Option(None, "--case-id", "-c")):
     """Check SPF, DKIM, DMARC for a domain"""
     console.print(f"[cyan]Checking email authentication for {domain}...[/cyan]")
     results = auth_checker.check_all(domain)
@@ -184,7 +179,7 @@ def email_auth(domain: str = typer.Argument(...), case_id: Optional[int] = typer
         for r in spf['records']:
             console.print(f"  {r}")
     else:
-        console.print(f"[red]✗[/red] SPF: Not found")
+        console.print("[red]✗[/red] SPF: Not found")
     
     # DMARC
     dmarc = results['dmarc']
@@ -193,7 +188,7 @@ def email_auth(domain: str = typer.Argument(...), case_id: Optional[int] = typer
         for r in dmarc['records']:
             console.print(f"  {r}")
     else:
-        console.print(f"[red]✗[/red] DMARC: Not found")
+        console.print("[red]✗[/red] DMARC: Not found")
     
     # MX
     mx = results['mx']
@@ -202,7 +197,7 @@ def email_auth(domain: str = typer.Argument(...), case_id: Optional[int] = typer
         for r in mx['records']:
             console.print(f"  {r['priority']} {r['exchange']}")
     else:
-        console.print(f"[red]✗[/red] MX: Not found")
+        console.print("[red]✗[/red] MX: Not found")
     
     if case_id:
         db.add_finding(case_id, "email.auth", domain, results, "medium" if not spf['found'] or not dmarc['found'] else "low")
@@ -210,7 +205,7 @@ def email_auth(domain: str = typer.Argument(...), case_id: Optional[int] = typer
 
 # Domain commands
 @domain_app.command("intel")
-def domain_intel_cmd(domain: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+def domain_intel_cmd(domain: str = typer.Argument(...), case_id: int | None = typer.Option(None, "--case-id", "-c")):
     """Gather domain intelligence"""
     console.print(f"[cyan]Gathering intelligence for {domain}...[/cyan]")
     results = domain_intel.get_all_records(domain)
@@ -219,13 +214,17 @@ def domain_intel_cmd(domain: str = typer.Argument(...), case_id: Optional[int] =
     table.add_column("Type", style="cyan")
     table.add_column("Records")
     
-    if results['a']: table.add_row("A", "\n".join(results['a']))
-    if results['aaaa']: table.add_row("AAAA", "\n".join(results['aaaa']))
-    if results['ns']: table.add_row("NS", "\n".join(results['ns']))
-    if results['mx']: 
+    if results['a']:
+        table.add_row("A", "\n".join(results['a']))
+    if results['aaaa']:
+        table.add_row("AAAA", "\n".join(results['aaaa']))
+    if results['ns']:
+        table.add_row("NS", "\n".join(results['ns']))
+    if results['mx']:
         mx_str = "\n".join([f"{r['priority']} {r['host']}" for r in results['mx']])
         table.add_row("MX", mx_str)
-    if results['txt']: table.add_row("TXT", "\n".join(results['txt'][:5]))
+    if results['txt']:
+        table.add_row("TXT", "\n".join(results['txt'][:5]))
     
     console.print(table)
     
@@ -235,7 +234,7 @@ def domain_intel_cmd(domain: str = typer.Argument(...), case_id: Optional[int] =
 
 # IP commands
 @ip_app.command("intel")
-def ip_intel_cmd(ip: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+def ip_intel_cmd(ip: str = typer.Argument(...), case_id: int | None = typer.Option(None, "--case-id", "-c")):
     """Gather IP intelligence"""
     console.print(f"[cyan]Gathering intelligence for {ip}...[/cyan]")
     results = ip_intel.get_info(ip)
@@ -259,7 +258,7 @@ def ip_intel_cmd(ip: str = typer.Argument(...), case_id: Optional[int] = typer.O
 
 # CT commands
 @ct_app.command("search")
-def ct_search_cmd(domain: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+def ct_search_cmd(domain: str = typer.Argument(...), case_id: int | None = typer.Option(None, "--case-id", "-c")):
     """Search Certificate Transparency logs"""
     console.print(f"[cyan]Searching CT logs for {domain}...[/cyan]")
     results = ct_search.search(domain)
@@ -286,7 +285,7 @@ def ct_search_cmd(domain: str = typer.Argument(...), case_id: Optional[int] = ty
 
 # URL commands
 @url_app.command("trace")
-def url_trace_cmd(url: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+def url_trace_cmd(url: str = typer.Argument(...), case_id: int | None = typer.Option(None, "--case-id", "-c")):
     """Trace URL redirects"""
     console.print(f"[cyan]Tracing redirects for {url}...[/cyan]")
     results = url_tracer.trace(url)
@@ -318,7 +317,7 @@ def url_trace_cmd(url: str = typer.Argument(...), case_id: Optional[int] = typer
 
 # File commands
 @file_app.command("meta")
-def file_meta_cmd(file: Path = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+def file_meta_cmd(file: Path = typer.Argument(...), case_id: int | None = typer.Option(None, "--case-id", "-c")):
     """Extract file metadata"""
     console.print(f"[cyan]Extracting metadata from {file}...[/cyan]")
     results = file_meta.extract(file)
@@ -346,7 +345,7 @@ def file_meta_cmd(file: Path = typer.Argument(...), case_id: Optional[int] = typ
 
 # User commands
 @user_app.command("pivot")
-def user_pivot_cmd(username: str = typer.Argument(...), case_id: Optional[int] = typer.Option(None, "--case-id", "-c")):
+def user_pivot_cmd(username: str = typer.Argument(...), case_id: int | None = typer.Option(None, "--case-id", "-c")):
     """Pivot on username across platforms (passive checks)"""
     console.print(f"[cyan]Pivoting on username: {username}[/cyan]")
     console.print("[yellow]Note: This performs passive checks on public endpoints[/yellow]")
@@ -387,7 +386,7 @@ def report_generate_cmd(
         console.print(f"[green]✓[/green] Report saved: {filepath}")
     except Exception as e:
         console.print(f"[red]✗[/red] {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 if __name__ == "__main__":
     app()

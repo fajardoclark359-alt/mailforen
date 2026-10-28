@@ -1,11 +1,13 @@
-from typing import Dict, Any, List
+from typing import Any
+
 from ...core.http import http_client
 from ...core.logger import logger
+
 
 class URLTracer:
     """Trace URL redirects safely"""
     
-    def trace(self, url: str) -> Dict[str, Any]:
+    def trace(self, url: str) -> dict[str, Any]:
         """Trace redirect chain"""
         chain = []
         current_url = url

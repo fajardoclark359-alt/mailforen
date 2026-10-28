@@ -1,7 +1,9 @@
+
 import httpx
-from typing import Optional, Dict, Any
+
 from .config import settings
 from .logger import logger
+
 
 class HTTPClient:
     """HTTP client with rate limiting and safety features"""
@@ -14,7 +16,7 @@ class HTTPClient:
         self.timeout = settings.timeout
         self.proxy = settings.proxy
     
-    def get(self, url: str, params: Optional[Dict] = None, **kwargs) -> Optional[httpx.Response]:
+    def get(self, url: str, params: dict | None = None, **kwargs) -> httpx.Response | None:
         """Perform GET request"""
         try:
             client_kwargs = {
@@ -32,7 +34,7 @@ class HTTPClient:
             logger.error(f"HTTP GET failed for {url}: {e}")
             return None
     
-    def head(self, url: str, **kwargs) -> Optional[httpx.Response]:
+    def head(self, url: str, **kwargs) -> httpx.Response | None:
         """Perform HEAD request"""
         try:
             client_kwargs = {
