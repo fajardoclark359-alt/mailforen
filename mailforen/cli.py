@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich.console import Console
@@ -7,6 +8,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from . import __version__
+from .core.config import settings
 from .core.db import db
 from .modules.email.auth import auth_checker
 from .modules.email.headers import header_analyzer
@@ -44,6 +46,24 @@ app.add_typer(url_app, name="url")
 app.add_typer(user_app, name="user")
 app.add_typer(file_app, name="file")
 app.add_typer(report_app, name="report")
+
+
+@app.callback()
+def main(
+    unsafe: bool = typer.Option(
+        False,
+        "--unsafe",
+        help="Enable active checks that may contact targets directly "
+             "(no active checks are implemented yet; reserved for future use).",
+    ),
+):
+    """Advanced OSINT toolkit for email forensics and digital investigations"""
+    settings.allow_unsafe = unsafe
+    if unsafe:
+        console.print(
+            "[bold red]⚠ Unsafe mode enabled:[/bold red] "
+            "active checks may contact targets directly."
+        )
 
 @app.command()
 def version():
@@ -352,7 +372,7 @@ def user_pivot_cmd(username: str = typer.Argument(...), case_id: int | None = ty
     console.print("[yellow]Note: This performs passive checks on public endpoints[/yellow]")
     
     # Basic passive checks
-    results = {
+    results: dict[str, Any] = {
         "username": username,
         "checks": []
     }

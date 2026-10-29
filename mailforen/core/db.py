@@ -73,6 +73,8 @@ class CaseDB:
             )
             case_id = cursor.lastrowid
             conn.commit()
+            if case_id is None:  # pragma: no cover - INSERT always sets lastrowid
+                raise RuntimeError("INSERT into cases did not return a rowid")
             logger.info(f"Created case '{name}' (ID: {case_id})")
             return case_id
         except sqlite3.IntegrityError:
@@ -115,6 +117,8 @@ class CaseDB:
         )
         finding_id = cursor.lastrowid
         conn.commit()
+        if finding_id is None:  # pragma: no cover - INSERT always sets lastrowid
+            raise RuntimeError("INSERT into findings did not return a rowid")
         conn.close()
         logger.debug(f"Added finding to case {case_id}")
         return finding_id

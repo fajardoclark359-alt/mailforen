@@ -18,7 +18,7 @@ class IPIntel:
             results["ptr"] = results["reverse_dns"]
         return results
     
-    def reverse_dns(self, ip: str) -> str:
+    def reverse_dns(self, ip: str) -> str | None:
         try:
             return socket.gethostbyaddr(ip)[0]
         except Exception as e:

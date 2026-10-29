@@ -71,6 +71,42 @@ class TestClientDefaults:
             raise httpx.ConnectError("refused")
 
         monkeypatch.setattr(http_module.httpx, "Client", failing_client)
+        client = HTTPClient()
+        client.rate_limit_delay = 0  # two calls on one instance: skip throttle sleep
 
-        assert HTTPClient().head("https://unreachable.example/") is None
-        assert HTTPClient().get("https://unreachable.example/") is None
+        assert client.head("https://unreachable.example/") is None
+        assert client.get("https://unreachable.example/") is None
+
+
+class TestRateLimiting:
+    def test_first_request_not_delayed(self, patched_client, monkeypatch):
+        sleeps = []
+        monkeypatch.setattr(http_module.time, "sleep", lambda s: sleeps.append(s))
+        client = HTTPClient()
+
+        client.head("https://a.example/")
+
+        assert sleeps == []
+
+    def test_consecutive_requests_throttled(self, patched_client, monkeypatch):
+        sleeps = []
+        monkeypatch.setattr(http_module.time, "sleep", lambda s: sleeps.append(s))
+        client = HTTPClient()
+        client.rate_limit_delay = 0.5
+
+        client.head("https://a.example/")  # first call: no sleep, records timestamp
+        client.get("https://a.example/")   # immediate second call: must sleep
+
+        assert len(sleeps) == 1
+        assert 0.3 <= sleeps[0] <= 0.5
+
+    def test_zero_delay_disables_throttle(self, patched_client, monkeypatch):
+        sleeps = []
+        monkeypatch.setattr(http_module.time, "sleep", lambda s: sleeps.append(s))
+        client = HTTPClient()
+        client.rate_limit_delay = 0
+
+        client.head("https://a.example/")
+        client.head("https://a.example/")
+
+        assert sleeps == []

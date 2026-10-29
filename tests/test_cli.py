@@ -5,6 +5,7 @@ from typer.testing import CliRunner
 
 import mailforen.cli as cli_module
 import mailforen.reports.generator as generator_module
+from mailforen.core.config import settings
 
 EML = b"""From: attacker@example.com
 To: victim@target.org
@@ -147,6 +148,26 @@ class TestUserPivot:
         assert finding["module"] == "user.pivot"
         urls = [c["url"] for c in finding["result"]["checks"]]
         assert "https://reddit.com/johndoe" in urls
+
+
+class TestUnsafeFlag:
+    def test_unsafe_flag_enables_mode_and_warns(self, runner, monkeypatch):
+        monkeypatch.setattr(settings, "allow_unsafe", False)
+
+        result = runner.invoke(cli_module.app, ["--unsafe", "version"])
+
+        assert result.exit_code == 0
+        assert "Unsafe mode enabled" in result.output
+        assert settings.allow_unsafe is True
+
+    def test_without_flag_stays_passive(self, runner, monkeypatch):
+        monkeypatch.setattr(settings, "allow_unsafe", True)
+
+        result = runner.invoke(cli_module.app, ["version"])
+
+        assert result.exit_code == 0
+        assert "Unsafe mode" not in result.output
+        assert settings.allow_unsafe is False
 
 
 class TestReportCommand:
