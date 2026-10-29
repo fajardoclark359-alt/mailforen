@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 from jinja2 import Template
 from ..core.db import db
@@ -24,7 +24,7 @@ class ReportGenerator:
         report_data = {
             "case": case,
             "findings": findings,
-            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "tool": "mailforen v0.1.0"
         }
         
