@@ -1,0 +1,105 @@
+site_name: mailforen Documentation
+site_description: Advanced OSINT toolkit for email forensics and digital investigations
+site_url: https://ritchegerona.github.io/mailforen/
+repo_url: https://github.com/ritchegerona/mailforen
+repo_name: ritchegerona/mailforen
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quick-start.md
+      - Safety & Ethics: getting-started/safety.md
+  - CLI Reference: cli-reference.md
+  - Usage Guide: usage-guide.md
+  - API Reference: api-reference.md
+  - Architecture: architecture.md
+  - Development:
+      - Contributing: ../CONTRIBUTING.md
+      - Testing: development/testing.md
+      - Project Layout: development/project-layout.md
+  - Reference:
+      - Disclaimer: ../DISCLAIMER.md
+      - License: ../LICENSE
+      - Changelog: reference/changelog.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - codehilite:
+      guess_lang: false
+  - def_list
+  - footnotes
+  - meta
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __pymdownx_highlight_line_spans
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - minify:
+      minify_html: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ritchegerona/mailforen
+  version:
+    provider: mike
+
+copyright: Copyright &copy; 2026 mailforen contributors
