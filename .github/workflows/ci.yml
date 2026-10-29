@@ -27,5 +27,8 @@ jobs:
       - name: Lint (ruff)
         run: ruff check mailforen tests
 
-      - name: Test (pytest)
-        run: pytest -q
+      - name: Type check (mypy)
+        run: mypy mailforen
+
+      - name: Test (pytest, with coverage)
+        run: pytest -q --cov=mailforen --cov-report=term-missing:skip-covered

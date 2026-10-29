@@ -27,6 +27,38 @@ class TestExtract:
 
         assert results == {"error": "File not found"}
 
+    def test_jpeg_exif_extracted(self, tmp_path, monkeypatch):
+        import sys
+        import types
+
+        fake = types.SimpleNamespace(process_file=lambda f: {
+            "EXIF DateTimeOriginal": "2026:10:28 10:00:00",
+            "JPEGThumbnail": b"thumbnail-bytes",  # must be filtered out
+        })
+        monkeypatch.setitem(sys.modules, "exifread", fake)
+        path = tmp_path / "with-exif.jpg"
+        path.write_bytes(b"\xff\xd8\xff\xe0" + b"\x00" * 32)
+
+        results = file_meta.extract(path)
+
+        assert results["exif"] == {"EXIF DateTimeOriginal": "2026:10:28 10:00:00"}
+
+    def test_jpeg_exif_failure_tolerated(self, tmp_path, monkeypatch):
+        import sys
+        import types
+
+        def boom(f):
+            raise RuntimeError("corrupt image")
+
+        monkeypatch.setitem(sys.modules, "exifread", types.SimpleNamespace(process_file=boom))
+        path = tmp_path / "broken.jpg"
+        path.write_bytes(b"\xff\xd8\xff\xe0" + b"\x00" * 32)
+
+        results = file_meta.extract(path)
+
+        assert "error" not in results
+        assert "exif" not in results
+
     def test_extension_normalised_lower_case(self, tmp_path):
         path = tmp_path / "Photo.JPG"
         path.write_bytes(b"\xff\xd8\xff")  # not a valid JPEG; EXIF just won't be found

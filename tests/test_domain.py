@@ -76,6 +76,11 @@ class TestRecordLookups:
             {"priority": 30, "host": "mx3.example.com"},
         ]
 
+    def test_cname_records(self, resolver):
+        resolver.add("sub.example.com", "CNAME", [FakeStr("target.example.com.")])
+
+        assert domain_intel.get_cname_records("sub.example.com") == ["target.example.com"]
+
     @pytest.mark.parametrize("method", [
         "get_a_records",
         "get_aaaa_records",
