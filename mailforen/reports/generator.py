@@ -4,6 +4,7 @@ from pathlib import Path
 
 from jinja2 import Template
 
+from .. import __version__
 from ..core.config import settings
 from ..core.db import db
 from ..core.logger import logger
@@ -27,7 +28,7 @@ class ReportGenerator:
             "case": case,
             "findings": findings,
             "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
-            "tool": "mailforen v0.1.0"
+            "tool": f"mailforen v{__version__}",
         }
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -148,7 +149,7 @@ class ReportGenerator:
         html_path = self.generate_html(data, filename)
         try:
             try:
-                from weasyhtml import HTML
+                from weasyprint import HTML
                 HTML(filename=str(html_path)).write_pdf(str(filepath))
             except ImportError:
                 import pdfkit

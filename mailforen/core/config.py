@@ -2,6 +2,8 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from .. import __version__
+
 
 class Settings(BaseSettings):
     """Configuration for mailforen"""
@@ -14,7 +16,7 @@ class Settings(BaseSettings):
     debug: bool = False
     
     # Network settings
-    user_agent: str = "mailforen/0.1.0 (OSINT Research Tool)"
+    user_agent: str = f"mailforen/{__version__} (OSINT Research Tool)"
     timeout: int = 30
     max_retries: int = 3
     rate_limit_delay: float = 1.0

@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from . import __version__
 from .core.db import db
 from .modules.email.auth import auth_checker
 from .modules.email.headers import header_analyzer
@@ -48,7 +49,7 @@ app.add_typer(report_app, name="report")
 def version():
     """Show version information"""
     console.print(Panel.fit(
-        "[bold cyan]mailforen[/bold cyan] v0.1.0\n"
+        f"[bold cyan]mailforen[/bold cyan] v{__version__}\n"
         "[yellow]Advanced OSINT toolkit for email forensics and digital investigations[/yellow]\n\n"
         "[red]⚠️  For authorized use only[/red]",
         title="Version"
