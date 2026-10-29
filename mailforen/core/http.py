@@ -17,7 +17,7 @@ class HTTPClient:
         self.proxy = settings.proxy
     
     def get(self, url: str, params: dict | None = None, **kwargs) -> httpx.Response | None:
-        """Perform GET request"""
+        """Perform GET request (follows redirects)"""
         try:
             client_kwargs = {
                 "headers": self.headers,
@@ -35,12 +35,16 @@ class HTTPClient:
             return None
     
     def head(self, url: str, **kwargs) -> httpx.Response | None:
-        """Perform HEAD request"""
+        """Perform HEAD request.
+
+        Redirects are NOT followed: callers such as the URL tracer need to
+        observe raw 3xx responses and Location headers themselves.
+        """
         try:
             client_kwargs = {
                 "headers": self.headers,
                 "timeout": self.timeout,
-                "follow_redirects": True,
+                "follow_redirects": False,
             }
             if self.proxy:
                 client_kwargs["proxy"] = self.proxy
