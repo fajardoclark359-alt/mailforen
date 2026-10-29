@@ -1,12 +1,14 @@
+from typing import Any
+
 import dns.resolver
-from typing import Dict, Any
+
 from ...core.logger import logger
-from ...utils.validators import validators
+
 
 class EmailAuthChecker:
     """Check SPF, DKIM, DMARC"""
     
-    def check_all(self, domain: str) -> Dict[str, Any]:
+    def check_all(self, domain: str) -> dict[str, Any]:
         """Check all email authentication records"""
         results = {
             "domain": domain,
@@ -16,7 +18,7 @@ class EmailAuthChecker:
         }
         return results
     
-    def check_spf(self, domain: str) -> Dict[str, Any]:
+    def check_spf(self, domain: str) -> dict[str, Any]:
         """Check SPF record"""
         try:
             answers = dns.resolver.resolve(domain, 'TXT')
@@ -33,7 +35,7 @@ class EmailAuthChecker:
             logger.debug(f"SPF lookup failed for {domain}: {e}")
             return {"found": False, "error": str(e)}
     
-    def check_dmarc(self, domain: str) -> Dict[str, Any]:
+    def check_dmarc(self, domain: str) -> dict[str, Any]:
         """Check DMARC record"""
         try:
             dmarc_domain = f"_dmarc.{domain}"
@@ -51,7 +53,7 @@ class EmailAuthChecker:
             logger.debug(f"DMARC lookup failed for {domain}: {e}")
             return {"found": False, "error": str(e)}
     
-    def check_mx(self, domain: str) -> Dict[str, Any]:
+    def check_mx(self, domain: str) -> dict[str, Any]:
         """Check MX records"""
         try:
             answers = dns.resolver.resolve(domain, 'MX')

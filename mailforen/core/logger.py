@@ -1,8 +1,9 @@
 import logging
-import sys
-from pathlib import Path
+
 from rich.logging import RichHandler
+
 from .config import settings
+
 
 def setup_logger(name: str = "mailforen") -> logging.Logger:
     """Setup logger with rich formatting"""

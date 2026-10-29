@@ -1,10 +1,10 @@
-import sqlite3
 import json
-from pathlib import Path
-from datetime import datetime
-from typing import Optional, List, Dict, Any
+import sqlite3
+from typing import Any
+
 from .config import settings
 from .logger import logger
+
 
 class CaseDB:
     """SQLite database for case management and evidence tracking"""
@@ -62,7 +62,7 @@ class CaseDB:
         conn.close()
         logger.debug(f"Database initialized at {self.db_path}")
     
-    def create_case(self, name: str, target: str = None, description: str = None) -> int:
+    def create_case(self, name: str, target: str | None = None, description: str | None = None) -> int:
         """Create a new investigation case"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -73,6 +73,8 @@ class CaseDB:
             )
             case_id = cursor.lastrowid
             conn.commit()
+            if case_id is None:  # pragma: no cover - INSERT always sets lastrowid
+                raise RuntimeError("INSERT into cases did not return a rowid")
             logger.info(f"Created case '{name}' (ID: {case_id})")
             return case_id
         except sqlite3.IntegrityError:
@@ -81,7 +83,7 @@ class CaseDB:
         finally:
             conn.close()
     
-    def list_cases(self) -> List[Dict[str, Any]]:
+    def list_cases(self) -> list[dict[str, Any]]:
         """List all cases"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -91,7 +93,7 @@ class CaseDB:
         conn.close()
         return cases
     
-    def get_case(self, case_id: int) -> Optional[Dict[str, Any]]:
+    def get_case(self, case_id: int) -> dict[str, Any] | None:
         """Get case by ID"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -102,8 +104,8 @@ class CaseDB:
         return dict(row) if row else None
     
     def add_finding(self, case_id: int, module: str, input_data: str, 
-                   result: Dict[str, Any], risk_level: str = "info", 
-                   tags: List[str] = None, notes: str = None) -> int:
+                   result: dict[str, Any], risk_level: str = "info", 
+                   tags: list[str] | None = None, notes: str | None = None) -> int:
         """Add a finding to a case"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -115,11 +117,13 @@ class CaseDB:
         )
         finding_id = cursor.lastrowid
         conn.commit()
+        if finding_id is None:  # pragma: no cover - INSERT always sets lastrowid
+            raise RuntimeError("INSERT into findings did not return a rowid")
         conn.close()
         logger.debug(f"Added finding to case {case_id}")
         return finding_id
     
-    def get_findings(self, case_id: int) -> List[Dict[str, Any]]:
+    def get_findings(self, case_id: int) -> list[dict[str, Any]]:
         """Get all findings for a case"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row

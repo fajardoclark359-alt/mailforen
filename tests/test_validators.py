@@ -1,45 +1,102 @@
-"""Unit tests for input validators."""
+import pytest
 
 from mailforen.utils.validators import validators
 
 
-def test_valid_email():
-    assert validators.is_email("user@example.com")
-    assert validators.is_email("first.last+tag@sub.example.co.uk")
+class TestIsEmail:
+    @pytest.mark.parametrize("email", [
+        "user@example.com",
+        "first.last@sub.domain.org",
+        "user+tag@example.co.uk",
+        "a_b%c@x.io",
+    ])
+    def test_valid(self, email):
+        assert validators.is_email(email) is True
+
+    @pytest.mark.parametrize("email", [
+        "",
+        "no-at-sign",
+        "@example.com",
+        "user@",
+        "user@nodot",
+        "user @spaces.com",
+    ])
+    def test_invalid(self, email):
+        assert validators.is_email(email) is False
 
 
-def test_invalid_email():
-    assert not validators.is_email("not-an-email")
-    assert not validators.is_email("missing@tld")
-    assert not validators.is_email("@example.com")
+class TestIsDomain:
+    @pytest.mark.parametrize("domain", [
+        "example.com",
+        "sub.example.com",
+        "deep.sub.example.org",
+        "a-b.co",
+    ])
+    def test_valid(self, domain):
+        assert validators.is_domain(domain) is True
+
+    @pytest.mark.parametrize("domain", [
+        "",
+        "example",
+        "-leadingdash.com",
+        "trailingdash-.com",
+        "example.c",          # TLD too short
+        "example dot com",
+    ])
+    def test_invalid(self, domain):
+        assert validators.is_domain(domain) is False
 
 
-def test_valid_domain():
-    assert validators.is_domain("example.com")
-    assert validators.is_domain("sub.example.co.uk")
+class TestIsIP:
+    @pytest.mark.parametrize("ip", [
+        "192.0.2.1",
+        "0.0.0.0",
+        "::1",
+        "2001:db8::1",
+    ])
+    def test_valid(self, ip):
+        assert validators.is_ip(ip) is True
+
+    @pytest.mark.parametrize("ip", [
+        "",
+        "999.999.999.999",
+        "192.0.2",
+        "not-an-ip",
+    ])
+    def test_invalid(self, ip):
+        assert validators.is_ip(ip) is False
 
 
-def test_invalid_domain():
-    assert not validators.is_domain("example")
-    assert not validators.is_domain("-bad.com")
-    assert not validators.is_domain("")
+class TestIsURL:
+    @pytest.mark.parametrize("url", [
+        "http://example.com",
+        "https://example.com/path?q=1",
+        "https://sub.example.com:8443/x",
+    ])
+    def test_valid(self, url):
+        assert validators.is_url(url) is True
+
+    @pytest.mark.parametrize("url", [
+        "",
+        "ftp://example.com",
+        "example.com",
+        "https://",
+    ])
+    def test_invalid(self, url):
+        assert validators.is_url(url) is False
 
 
-def test_valid_ip():
-    assert validators.is_ip("192.168.0.1")
-    assert validators.is_ip("::1")
-    assert validators.is_ip("2606:4700::1111")
+class TestExtractDomainFromEmail:
+    def test_valid_email(self):
+        assert validators.extract_domain_from_email("user@example.com") == "example.com"
 
+    def test_subdomain_email(self):
+        assert validators.extract_domain_from_email("a@mail.example.com") == "mail.example.com"
 
-def test_invalid_ip():
-    assert not validators.is_ip("999.999.999.999")
-    assert not validators.is_ip("not.an.ip")
+    def test_invalid_email_returns_none(self):
+        assert validators.extract_domain_from_email("not-an-email") is None
 
+    def test_singleton_exported(self):
+        from mailforen.utils.validators import Validators
 
-def test_ip_is_not_a_valid_domain():
-    assert not validators.is_domain("192.168.0.1")
-
-
-def test_extract_domain_from_email():
-    assert validators.extract_domain_from_email("user@example.com") == "example.com"
-    assert validators.extract_domain_from_email("bad") is None
+        assert isinstance(validators, Validators)

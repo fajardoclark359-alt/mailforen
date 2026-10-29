@@ -1,6 +1,6 @@
-import re
 import ipaddress
-from typing import Optional
+import re
+
 
 class Validators:
     @staticmethod
@@ -27,7 +27,7 @@ class Validators:
         return bool(re.match(pattern, url))
     
     @staticmethod
-    def extract_domain_from_email(email: str) -> Optional[str]:
+    def extract_domain_from_email(email: str) -> str | None:
         """Extract domain from a mailto-style or display-name email address."""
         # Strip display name and angle brackets if present
         email = email.strip()

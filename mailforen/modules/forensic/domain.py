@@ -1,11 +1,14 @@
+from typing import Any
+
 import dns.resolver
-from typing import Dict, Any, List
+
 from ...core.logger import logger
+
 
 class DomainIntel:
     """Domain intelligence gathering"""
     
-    def get_all_records(self, domain: str) -> Dict[str, Any]:
+    def get_all_records(self, domain: str) -> dict[str, Any]:
         """Get all DNS records"""
         results = {
             "domain": domain,
@@ -18,7 +21,7 @@ class DomainIntel:
         }
         return results
     
-    def get_a_records(self, domain: str) -> List[str]:
+    def get_a_records(self, domain: str) -> list[str]:
         try:
             answers = dns.resolver.resolve(domain, 'A')
             return [str(rdata) for rdata in answers]
@@ -26,7 +29,7 @@ class DomainIntel:
             logger.debug(f"A lookup failed: {e}")
             return []
     
-    def get_aaaa_records(self, domain: str) -> List[str]:
+    def get_aaaa_records(self, domain: str) -> list[str]:
         try:
             answers = dns.resolver.resolve(domain, 'AAAA')
             return [str(rdata) for rdata in answers]
@@ -34,7 +37,7 @@ class DomainIntel:
             logger.debug(f"AAAA lookup failed: {e}")
             return []
     
-    def get_mx_records(self, domain: str) -> List[Dict]:
+    def get_mx_records(self, domain: str) -> list[dict]:
         try:
             answers = dns.resolver.resolve(domain, 'MX')
             records = [{"priority": r.preference, "host": str(r.exchange).rstrip('.')} for r in answers]
@@ -43,7 +46,7 @@ class DomainIntel:
             logger.debug(f"MX lookup failed: {e}")
             return []
     
-    def get_ns_records(self, domain: str) -> List[str]:
+    def get_ns_records(self, domain: str) -> list[str]:
         try:
             answers = dns.resolver.resolve(domain, 'NS')
             return [str(rdata).rstrip('.') for rdata in answers]
@@ -51,7 +54,7 @@ class DomainIntel:
             logger.debug(f"NS lookup failed: {e}")
             return []
     
-    def get_txt_records(self, domain: str) -> List[str]:
+    def get_txt_records(self, domain: str) -> list[str]:
         try:
             answers = dns.resolver.resolve(domain, 'TXT')
             records = []
@@ -62,7 +65,7 @@ class DomainIntel:
             logger.debug(f"TXT lookup failed: {e}")
             return []
     
-    def get_cname_records(self, domain: str) -> List[str]:
+    def get_cname_records(self, domain: str) -> list[str]:
         try:
             answers = dns.resolver.resolve(domain, 'CNAME')
             return [str(rdata).rstrip('.') for rdata in answers]
