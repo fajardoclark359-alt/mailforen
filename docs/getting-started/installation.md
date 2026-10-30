@@ -6,9 +6,30 @@
 - **pip** ≥ 21.0
 - **Git** (for cloning)
 
-Optional system dependencies for PDF generation:
-- **weasyprint** — `pip install weasyprint` (requires system libraries: pango, cairo, gdk-pixbuf)
-- **wkhtmltopdf** — `apt-get install wkhtmltopdf` (for pdfkit fallback)
+## System dependencies (PDF generation)
+
+PDF-related features optionally require system-level libraries.
+
+### weasyprint
+- **Ubuntu/Debian**: `sudo apt-get install -y pango libcairo2 gdk-pixbuf-2.0`
+- **macOS** (Homebrew): `brew install pango cairo gdk-pixbuf`
+- **Windows**: install via `pip install weasyprint` (binary wheels include dependencies) or build from source.
+
+After installing system libraries:
+```bash
+pip install weasyprint
+```
+
+### wkhtmltopdf
+Provides a command‑line HTML‑to‑PDF converter used by `pdfkit` fallback.
+
+- **Ubuntu/Debian**: `sudo apt-get install -y wkhtmltopdf`
+- **macOS** (Homebrew): `brew install wkhtmltopdf`
+- **Windows**: download the installer from <https://wkhtmltopdf.org/downloads.html> and add it to your `PATH`.
+
+After installation, `pdfkit` can call `wkhtmltopdf` without further configuration.
+
+> Note: If you do not need PDF generation, these dependencies are optional and can be skipped.
 
 ## From Source (Recommended)
 
