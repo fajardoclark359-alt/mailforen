@@ -21,9 +21,54 @@ Advanced OSINT toolkit for email forensics and digital investigations.
 
 ## Installation
 
+### From PyPI (Recommended)
+
 ```bash
+pip install mailforen
+```
+
+### From Source (Latest Development)
+
+```bash
+git clone https://github.com/your-org/mailforen.git
 cd mailforen
 pip install -e .
+```
+
+### With Development Dependencies
+
+```bash
+pip install -e ".[dev]"
+```
+
+### System Dependencies
+
+Some features require system packages:
+
+**PDF Report Generation** (requires `wkhtmltopdf`):
+- **Ubuntu/Debian**: `sudo apt-get install wkhtmltopdf`
+- **macOS**: `brew install wkhtmltopdf`
+- **Arch**: `sudo pacman -S wkhtmltopdf`
+- **Fedora**: `sudo dnf install wkhtmltopdf`
+
+**GUI Application** (requires Qt6):
+- **Ubuntu/Debian**: `sudo apt-get install python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtwidgets python3-pyside6.qtwebengine`
+- **macOS**: `brew install pyside6` (or use pip, included in dependencies)
+- **Arch**: `sudo pacman -S pyside6`
+
+### Virtual Environment (Recommended)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install mailforen
+```
+
+### Verify Installation
+
+```bash
+mailforen --help
+mailforen-gui --help    # if GUI dependencies installed
 ```
 
 ## Quick Start
