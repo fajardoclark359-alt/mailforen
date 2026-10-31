@@ -33,14 +33,14 @@ This tool is intended for legitimate security investigations, phishing incident 
 | [Usage Guide](usage-guide.md) | Practical workflows and examples |
 | [API Reference](api-reference.md) | Python module reference |
 | [Architecture](architecture.md) | System design and data flow |
-| [Contributing](../CONTRIBUTING.md) | Development setup and guidelines |
+| [Contributing](contributing.md) | Development setup and guidelines |
 
 ---
 
 ## Installation
 
 ```bash
-git clone https://github.com/ritchegerona/mailforen.git
+git clone https://github.com/fajardoclark359-alt/mailforen.git
 cd mailforen
 pip install -e .
 ```
@@ -90,9 +90,9 @@ mailforen report generate --case-id 1 --format html
 
 ## Community
 
-- **Issues:** [GitHub Issues](https://github.com/ritchegerona/mailforen/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/ritchegerona/mailforen/discussions)
-- **Security:** See [DISCLAIMER.md](../DISCLAIMER.md) for reporting
+- **Issues:** [GitHub Issues](https://github.com/fajardoclark359-alt/mailforen/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/fajardoclark359-alt/mailforen/discussions)
+- **Security:** See [DISCLAIMER.md](disclaimer.md) for reporting
 
 ---
 
@@ -104,4 +104,4 @@ mailforen report generate --case-id 1 --format html
 - [ ] Improved PDF generation backend
 - [ ] Received chain hop numbering per RFC 5321
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for good first issues.
+See [CONTRIBUTING.md](contributing.md) for good first issues.

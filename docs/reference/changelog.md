@@ -47,7 +47,7 @@ All notable changes to mailforen.
 
 ## Upcoming
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md#ideas-welcome-here) for planned features:
+See [CONTRIBUTING.md](../contributing.md#ideas-welcome-here) for planned features:
 
 - DKIM selector lookups
 - WHOIS/RDAP queries

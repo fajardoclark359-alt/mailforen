@@ -133,4 +133,4 @@ Shows case summary with all findings, risk levels color-coded.
 - Read the [Usage Guide](../usage-guide.md) for advanced workflows
 - Browse [CLI Reference](../cli-reference.md) for all commands
 - See [Architecture](../architecture.md) for internals
-- Check [CONTRIBUTING.md](../CONTRIBUTING.md) to contribute
+- Check [CONTRIBUTING.md](../contributing.md) to contribute

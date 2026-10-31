@@ -110,6 +110,6 @@ Found a vulnerability in mailforen itself?
 
 ## Disclaimer
 
-See [DISCLAIMER.md](../DISCLAIMER.md) for the full legal disclaimer.
+See [DISCLAIMER.md](../disclaimer.md) for the full legal disclaimer.
 
 > **TL;DR:** You are responsible for your use of this tool. The authors accept no liability.

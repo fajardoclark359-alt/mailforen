@@ -34,7 +34,7 @@ After installation, `pdfkit` can call `wkhtmltopdf` without further configuratio
 ## From Source (Recommended)
 
 ```bash
-git clone https://github.com/ritchegerona/mailforen.git
+git clone https://github.com/fajardoclark359-alt/mailforen.git
 cd mailforen
 python3 -m venv .venv
 source .venv/bin/activate

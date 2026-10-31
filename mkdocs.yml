@@ -1,9 +1,9 @@
 site_name: mailforen Documentation
 site_description: Advanced OSINT toolkit for email forensics and digital investigations
-site_url: https://ritchegerona.github.io/mailforen/
-repo_url: https://github.com/ritchegerona/mailforen
-repo_name: ritchegerona/mailforen
-edit_uri: edit/main/docs/
+site_url: https://fajardoclark359-alt.github.io/mailforen/documentation/
+repo_url: https://github.com/fajardoclark359-alt/mailforen
+repo_name: fajardoclark359-alt/mailforen
+edit_uri: edit/master/docs/
 
 theme:
   name: material
@@ -42,12 +42,12 @@ nav:
   - API Reference: api-reference.md
   - Architecture: architecture.md
   - Development:
-      - Contributing: ../CONTRIBUTING.md
+      - Contributing: contributing.md
       - Testing: development/testing.md
       - Project Layout: development/project-layout.md
   - Reference:
-      - Disclaimer: ../DISCLAIMER.md
-      - License: ../LICENSE
+      - Disclaimer: disclaimer.md
+      - License: license.md
       - Changelog: reference/changelog.md
 
 markdown_extensions:
@@ -95,11 +95,15 @@ plugins:
   - minify:
       minify_html: true
 
+# Keep the GitHub Pages landing page and the web analyzer out of the
+# rendered documentation build (they are served separately from docs/).
+exclude_docs: |
+  /index.html
+  /app/
+
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/ritchegerona/mailforen
-  version:
-    provider: mike
+      link: https://github.com/fajardoclark359-alt/mailforen
 
 copyright: Copyright &copy; 2026 mailforen contributors
