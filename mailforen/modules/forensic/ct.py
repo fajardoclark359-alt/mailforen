@@ -1,11 +1,13 @@
-from typing import Dict, Any, List
+from typing import Any
+
 from ...core.http import http_client
 from ...core.logger import logger
+
 
 class CTSearch:
     """Certificate Transparency log search via crt.sh"""
     
-    def search(self, domain: str) -> Dict[str, Any]:
+    def search(self, domain: str) -> dict[str, Any]:
         """Search crt.sh for certificates"""
         try:
             url = f"https://crt.sh/?q=%.{domain}&output=json"
@@ -24,7 +26,7 @@ class CTSearch:
                 return {
                     "domain": domain,
                     "certificates_found": len(data),
-                    "unique_subdomains": sorted(list(subdomains)),
+                    "unique_subdomains": sorted(subdomains),
                     "raw_count": len(data)
                 }
             return {"domain": domain, "error": f"HTTP {resp.status_code if resp else 'None'}"}

@@ -1,15 +1,16 @@
-import email
+import re
 from email import policy
 from email.parser import BytesParser
 from pathlib import Path
-from typing import Dict, List, Any
-import re
+from typing import Any
+
 from ...core.logger import logger
+
 
 class HeaderAnalyzer:
     """Analyze email headers for forensics"""
     
-    def analyze_file(self, file_path: Path) -> Dict[str, Any]:
+    def analyze_file(self, file_path: Path) -> dict[str, Any]:
         """Analyze .eml file"""
         try:
             with open(file_path, 'rb') as f:
@@ -19,7 +20,7 @@ class HeaderAnalyzer:
             logger.error(f"Failed to parse email: {e}")
             return {"error": str(e)}
     
-    def analyze_message(self, msg) -> Dict[str, Any]:
+    def analyze_message(self, msg) -> dict[str, Any]:
         """Analyze email message object"""
         results = {
             "from": msg.get('From'),
