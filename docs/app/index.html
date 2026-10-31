@@ -338,7 +338,58 @@
     <p class="pricing-note">All plans include the open-source CLI & GUI. Web Analyzer is free forever for individual use. <a href="https://github.com/fajardoclark359-alt/mailforen" target="_blank" rel="noopener">Self-host</a> on your own infrastructure at no cost.</p>
   </section>
 
-  <section id="results" class="results-section" aria-labelledby="results-title" aria-live="polite">
+  <section id="workflow" class="workflow" aria-labelledby="workflow-title">
+    <div class="workflow-header">
+      <span class="workflow-eyebrow">Quick Start</span>
+      <h2 id="workflow-title" class="workflow-title">From suspicious email to actionable intel in seconds</h2>
+      <p class="workflow-desc">No installation. No account. Paste, click, investigate.</p>
+    </div>
+    <div class="workflow-demo">
+      <div class="terminal">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="terminal-dot terminal-dot-red"></span>
+            <span class="terminal-dot terminal-dot-amber"></span>
+            <span class="terminal-dot terminal-dot-green"></span>
+          </div>
+          <span class="terminal-title">mailforen web analyzer</span>
+        </div>
+        <div class="terminal-body" id="terminal-demo">
+          <div class="terminal-line">
+            <span class="terminal-prompt">▸</span>
+            <span class="terminal-command">Enter: support@paypa1.com</span>
+          </div>
+          <div class="terminal-line terminal-output">
+            <span class="terminal-badge pass">PASS</span> Email syntax — Valid RFC-style address
+          </div>
+          <div class="terminal-line terminal-output">
+            <span class="terminal-badge fail">FAIL</span> Typo-squatting — 1 edit from "paypal.com" — likely impersonation
+          </div>
+          <div class="terminal-line terminal-output">
+            <span class="terminal-badge warn">WARN</span> SPF — all-qualifier "+" — any host may send (spoofable)
+          </div>
+          <div class="terminal-line terminal-output">
+            <span class="terminal-badge pass">PASS</span> DMARC — policy p=reject — spoofing blocked
+          </div>
+          <div class="terminal-line terminal-output">
+            <span class="terminal-badge info">INFO</span> CT logs — 12 certificates logged for paypa1.com
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">▸</span>
+            <span class="terminal-command">Paste raw headers → "Analyze pasted headers"</span>
+          </div>
+          <div class="terminal-line terminal-output">
+            <span class="terminal-badge info">INFO</span> Received chain — 4 hops traced to originating IP
+          </div>
+          <div class="terminal-line terminal-output">
+            <span class="terminal-badge fail">FAIL</span> Reply-To mismatch — replies go to attacker domain
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="results-section" class="results-section" aria-labelledby="results-title" aria-live="polite">
     <div class="results-header">
       <h2 id="results-title" class="results-title">Analysis Results</h2>
       <div class="results-actions">
@@ -352,12 +403,13 @@
         </button>
       </div>
     </div>
-    <div id="results" class="results-grid">
-      <div class="results-empty">
+    <div class="results-container">
+      <div id="results-empty" class="results-empty">
         <svg class="results-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <p class="results-empty-text">Enter a target above to start analyzing</p>
         <p class="results-empty-hint">Results will appear here as cards with PASS/WARN/FAIL/INFO badges</p>
       </div>
+      <div id="results" class="results-grid" aria-live="polite"></div>
     </div>
   </section>
 

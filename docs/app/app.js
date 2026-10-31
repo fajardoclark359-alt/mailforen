@@ -427,12 +427,12 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
     if (!cards || !cards.length) {
       grid.innerHTML = '';
-      empty.style.display = 'flex';
+      empty.hidden = false;
       exportBtn.disabled = true;
       return;
     }
 
-    empty.style.display = 'none';
+    empty.hidden = true;
     exportBtn.disabled = false;
     state.currentCards = cards;
 
@@ -458,7 +458,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   function setLoading(message) {
     var grid = state.elements.resultsGrid;
     var empty = state.elements.resultsEmpty;
-    empty.style.display = 'none';
+    empty.hidden = true;
     grid.innerHTML = '<div class="result-card" style="animation-delay: 0ms">'
       + '<div class="result-card-head">'
       + '<span class="result-badge info">LOADING</span>'
@@ -490,6 +490,21 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     });
   }
 
+  function showEmptyPrompt(inputId) {
+    var empty = state.elements.resultsEmpty;
+    var grid = state.elements.resultsGrid;
+    grid.innerHTML = '';
+    empty.hidden = false;
+    state.elements.exportBtn.disabled = true;
+    var el = document.getElementById(inputId);
+    if (el) {
+      el.focus();
+      el.classList.remove('input-nudge');
+      void el.offsetWidth; // restart animation
+      el.classList.add('input-nudge');
+    }
+  }
+
   function clearResults() {
     state.currentCards = [];
     state.currentTarget = '';
@@ -497,13 +512,8 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     var empty = state.elements.resultsEmpty;
     var exportBtn = state.elements.exportBtn;
     grid.innerHTML = '';
-    empty.style.display = 'flex';
+    empty.hidden = false;
     exportBtn.disabled = true;
-    // Clear inputs
-    state.elements.searchEmail.value = '';
-    state.elements.searchDomain.value = '';
-    state.elements.searchUrl.value = '';
-    state.elements.searchRaw.value = '';
   }
 
   function exportResults() {
@@ -660,7 +670,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       searchRaw: document.getElementById('search-raw'),
       rawFile: document.getElementById('raw-file'),
       resultsGrid: document.getElementById('results'),
-      resultsEmpty: document.querySelector('.results-empty'),
+      resultsEmpty: document.getElementById('results-empty'),
       exportBtn: document.getElementById('btn-export'),
       clearBtn: document.getElementById('btn-clear')
     };
@@ -672,22 +682,22 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       });
     });
 
-    // Analyze buttons
+    // Analyze buttons (with feedback on empty input)
     document.getElementById('btn-analyze-email').addEventListener('click', function () {
       var val = state.elements.searchEmail.value.trim();
-      if (val) runAnalysis('email', val);
+      if (val) runAnalysis('email', val); else showEmptyPrompt('search-email');
     });
     document.getElementById('btn-analyze-domain').addEventListener('click', function () {
       var val = state.elements.searchDomain.value.trim();
-      if (val) runAnalysis('domain', val);
+      if (val) runAnalysis('domain', val); else showEmptyPrompt('search-domain');
     });
     document.getElementById('btn-analyze-url').addEventListener('click', function () {
       var val = state.elements.searchUrl.value.trim();
-      if (val) runAnalysis('url', val);
+      if (val) runAnalysis('url', val); else showEmptyPrompt('search-url');
     });
     document.getElementById('btn-analyze-raw').addEventListener('click', function () {
       var val = state.elements.searchRaw.value.trim();
-      if (val) runRaw(val);
+      if (val) runRaw(val); else showEmptyPrompt('search-raw');
     });
 
     // Enter key handlers
