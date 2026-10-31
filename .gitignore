@@ -21,4 +21,6 @@ dist/
 *.pdf
 !docs/*.html
 !docs/*.pdf
+!docs/app/*.html
+!docs/documentation/**/*.html
 
