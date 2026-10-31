@@ -81,7 +81,7 @@ function parseReceivedChain(headerBlock) {
     var withM = /\bwith\s+([^\s;()]+)/i.exec(v);
     var date = /;\s*(.+)$/.exec(v);
     return {
-      hop: rec.length - i,               // hop 1 = earliest machine in the chain
+      hop: rec.length - i,
       from: from ? from[1] : null,
       by: by ? by[1] : null,
       with: withM ? withM[1] : null,
@@ -293,7 +293,7 @@ function domainCards(name) {
     if (spfRec) {
       var spf = parseSpf(spfRec);
       card('SPF', spf.openAll ? 'fail' : spf.allQualifier === '~' ? 'warn' : 'pass',
-        spf.openAll ? 'SPF ends in +' + 'all — any host may send mail for this domain (spoofable)'
+        spf.openAll ? 'SPF ends in +all — any host may send mail for this domain (spoofable)'
           : 'all-qualifier "' + spf.allQualifier + '"' , [spfRec]);
     } else {
       card('SPF', 'warn', 'No SPF record found on apex', recs.slice(0, 5));
@@ -408,70 +408,354 @@ function emlCards(raw) {
 
 // ---------------------------------------------------------------- browser UI
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-  var resultsEl, inputEl, rawEl;
+  var state = {
+    currentType: 'email',
+    currentTarget: '',
+    currentCards: [],
+    elements: {}
+  };
 
-  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function esc(s) { return String(s).replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">"); }
 
-  function badge(s) { return '<span class="badge s-' + s + '">' + ({ pass: 'PASS', warn: 'WARN', fail: 'FAIL', info: 'INFO' })[s] + '</span>'; }
+  function badgeClass(status) { return 'result-badge ' + status; }
+  function badgeLabel(status) { return ({ pass: 'PASS', warn: 'WARN', fail: 'FAIL', info: 'INFO' })[status] || status.toUpperCase(); }
 
-  function render(cards) {
+  function renderCards(cards) {
+    var grid = state.elements.resultsGrid;
+    var empty = state.elements.resultsEmpty;
+    var exportBtn = state.elements.exportBtn;
+
+    if (!cards || !cards.length) {
+      grid.innerHTML = '';
+      empty.style.display = 'flex';
+      exportBtn.disabled = true;
+      return;
+    }
+
+    empty.style.display = 'none';
+    exportBtn.disabled = false;
+    state.currentCards = cards;
+
     var html = '';
     for (var i = 0; i < cards.length; i++) {
       var c = cards[i];
       var ev = '';
       if (c.evidence && c.evidence.length) {
-        ev = '<ul class="evidence">' + c.evidence.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>';
+        ev = '<ul class="result-evidence">' + c.evidence.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>';
       }
-      html += '<div class="card"><div class="card-head">' + badge(c.status) + '<span class="card-title">' + esc(c.title) + '</span></div>'
-        + '<div class="card-detail">' + esc(c.detail) + '</div>' + ev + '</div>';
+      html += '<div class="result-card" style="animation-delay: ' + (i * 40) + 'ms">'
+        + '<div class="result-card-head">'
+        + '<span class="' + badgeClass(c.status) + '">' + badgeLabel(c.status) + '</span>'
+        + '<h3 class="result-title">' + esc(c.title) + '</h3>'
+        + '</div>'
+        + '<p class="result-detail">' + esc(c.detail) + '</p>'
+        + ev
+        + '</div>';
     }
-    resultsEl.innerHTML = html || '<div class="card"><div class="card-detail">No results.</div></div>';
+    grid.innerHTML = html;
   }
 
-  function run() {
-    var target = inputEl.value.trim();
-    if (!target) return;
-    resultsEl.innerHTML = '<div class="card"><div class="card-detail">Analyzing <b>' + esc(target) + '</b> …</div></div>';
-    var kind = detectTarget(target);
+  function setLoading(message) {
+    var grid = state.elements.resultsGrid;
+    var empty = state.elements.resultsEmpty;
+    empty.style.display = 'none';
+    grid.innerHTML = '<div class="result-card" style="animation-delay: 0ms">'
+      + '<div class="result-card-head">'
+      + '<span class="result-badge info">LOADING</span>'
+      + '<h3 class="result-title">Analyzing…</h3>'
+      + '</div>'
+      + '<p class="result-detail">' + esc(message) + '</p>'
+      + '</div>';
+  }
+
+  function runAnalysis(type, target) {
+    state.currentType = type;
+    state.currentTarget = target;
     var p;
-    if (kind === 'email') p = emailCards(target);
-    else if (kind === 'url') p = urlCards(target);
-    else if (kind === 'domain') p = domainCards(target);
-    else { render([{ title: 'Input', status: 'fail', detail: 'Could not classify input as email, URL or domain' }]); return; }
-    p.then(render).catch(function (e) {
-      render([{ title: 'Error', status: 'fail', detail: String(e && e.message || e) }]);
+    if (type === 'email') p = emailCards(target);
+    else if (type === 'url') p = urlCards(target);
+    else if (type === 'domain') p = domainCards(target);
+    else { renderCards([{ title: 'Input', status: 'fail', detail: 'Could not classify input' }]); return; }
+    p.then(renderCards).catch(function (e) {
+      renderCards([{ title: 'Error', status: 'fail', detail: String(e && e.message || e) }]);
     });
   }
 
-  function runRaw() {
-    var text = rawEl.value.trim();
-    if (!text) return;
-    resultsEl.innerHTML = '<div class="card"><div class="card-detail">Parsing raw message …</div></div>';
-    emlCards(text).then(render).catch(function (e) {
-      render([{ title: 'Error', status: 'fail', detail: String(e && e.message || e) }]);
+  function runRaw(text) {
+    state.currentType = 'raw';
+    state.currentTarget = text.slice(0, 100);
+    setLoading('Parsing raw message…');
+    emlCards(text).then(renderCards).catch(function (e) {
+      renderCards([{ title: 'Error', status: 'fail', detail: String(e && e.message || e) }]);
     });
+  }
+
+  function clearResults() {
+    state.currentCards = [];
+    state.currentTarget = '';
+    var grid = state.elements.resultsGrid;
+    var empty = state.elements.resultsEmpty;
+    var exportBtn = state.elements.exportBtn;
+    grid.innerHTML = '';
+    empty.style.display = 'flex';
+    exportBtn.disabled = true;
+    // Clear inputs
+    state.elements.searchEmail.value = '';
+    state.elements.searchDomain.value = '';
+    state.elements.searchUrl.value = '';
+    state.elements.searchRaw.value = '';
+  }
+
+  function exportResults() {
+    if (!state.currentCards.length) return;
+    var data = {
+      target: state.currentTarget,
+      type: state.currentType,
+      timestamp: new Date().toISOString(),
+      results: state.currentCards
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'mailforen-analysis-' + Date.now() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function switchTab(type) {
+    state.currentType = type;
+    // Update tabs
+    document.querySelectorAll('.search-tab').forEach(function (tab) {
+      var isActive = tab.dataset.type === type;
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', isActive);
+    });
+    // Update panels
+    document.querySelectorAll('.search-panel').forEach(function (panel) {
+      var isActive = panel.id === 'panel-' + type;
+      panel.classList.toggle('active', isActive);
+    });
+  }
+
+  function initTerminalDemo() {
+    var terminal = document.getElementById('terminal-demo');
+    if (!terminal) return;
+    var lines = terminal.querySelectorAll('.terminal-line');
+    var delay = 0;
+    lines.forEach(function (line, i) {
+      line.style.opacity = '0';
+      line.style.transform = 'translateY(10px)';
+      line.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      setTimeout(function () {
+        line.style.opacity = '1';
+        line.style.transform = 'translateY(0)';
+      }, delay);
+      delay += 300;
+    });
+    // Loop animation
+    setTimeout(function loop() {
+      lines.forEach(function (line) {
+        line.style.opacity = '0';
+        line.style.transform = 'translateY(-10px)';
+      });
+      setTimeout(function () {
+        lines.forEach(function (line, i) {
+          setTimeout(function () {
+            line.style.opacity = '1';
+            line.style.transform = 'translateY(0)';
+          }, i * 300);
+        });
+      }, 800);
+      setTimeout(loop, 8000);
+    }, 8000);
+  }
+
+  function initHeroCanvas() {
+    var canvas = document.querySelector('.hero-canvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var particles = [];
+    var width, height;
+    var animationId;
+
+    function resize() {
+      var rect = canvas.parentElement.getBoundingClientRect();
+      width = canvas.width = rect.width;
+      height = canvas.height = rect.height;
+    }
+
+    function createParticle() {
+      return {
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        radius: Math.random() * 1.5 + 0.5,
+        opacity: Math.random() * 0.5 + 0.1,
+        color: Math.random() > 0.5 ? '124, 58, 237' : '6, 182, 212'
+      };
+    }
+
+    function init() {
+      resize();
+      particles = [];
+      for (var i = 0; i < 60; i++) particles.push(createParticle());
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(' + p.color + ', ' + p.opacity + ')';
+        ctx.fill();
+      }
+      // Draw connections
+      for (var i = 0; i < particles.length; i++) {
+        for (var j = i + 1; j < particles.length; j++) {
+          var dx = particles[i].x - particles[j].x;
+          var dy = particles[i].y - particles[j].y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = 'rgba(124, 58, 237, ' + (0.05 * (1 - dist / 120)) + ')';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+      animationId = requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', function () {
+      init();
+    });
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    init();
+    animate();
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    inputEl = document.getElementById('target-input');
-    rawEl = document.getElementById('raw-input');
-    resultsEl = document.getElementById('results');
-    document.getElementById('analyze-btn').addEventListener('click', run);
-    inputEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
-    document.getElementById('raw-btn').addEventListener('click', runRaw);
-    document.getElementById('eml-file').addEventListener('change', function (e) {
+    // Cache elements
+    state.elements = {
+      searchEmail: document.getElementById('search-email'),
+      searchDomain: document.getElementById('search-domain'),
+      searchUrl: document.getElementById('search-url'),
+      searchRaw: document.getElementById('search-raw'),
+      rawFile: document.getElementById('raw-file'),
+      resultsGrid: document.getElementById('results'),
+      resultsEmpty: document.querySelector('.results-empty'),
+      exportBtn: document.getElementById('btn-export'),
+      clearBtn: document.getElementById('btn-clear')
+    };
+
+    // Tab switching
+    document.querySelectorAll('.search-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        switchTab(this.dataset.type);
+      });
+    });
+
+    // Analyze buttons
+    document.getElementById('btn-analyze-email').addEventListener('click', function () {
+      var val = state.elements.searchEmail.value.trim();
+      if (val) runAnalysis('email', val);
+    });
+    document.getElementById('btn-analyze-domain').addEventListener('click', function () {
+      var val = state.elements.searchDomain.value.trim();
+      if (val) runAnalysis('domain', val);
+    });
+    document.getElementById('btn-analyze-url').addEventListener('click', function () {
+      var val = state.elements.searchUrl.value.trim();
+      if (val) runAnalysis('url', val);
+    });
+    document.getElementById('btn-analyze-raw').addEventListener('click', function () {
+      var val = state.elements.searchRaw.value.trim();
+      if (val) runRaw(val);
+    });
+
+    // Enter key handlers
+    [state.elements.searchEmail, state.elements.searchDomain, state.elements.searchUrl].forEach(function (input) {
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          var btn = document.getElementById('btn-analyze-' + this.id.replace('search-', ''));
+          if (btn) btn.click();
+        }
+      });
+    });
+
+    // File upload
+    state.elements.rawFile.addEventListener('change', function (e) {
       var f = e.target.files && e.target.files[0];
       if (!f) return;
       var r = new FileReader();
-      r.onload = function () { rawEl.value = String(r.result); runRaw(); };
+      r.onload = function () {
+        state.elements.searchRaw.value = String(r.result);
+        runRaw(String(r.result));
+      };
       r.readAsText(f);
+      this.value = '';
     });
-    var q = new URLSearchParams(location.search).get('target');
-    if (q) { inputEl.value = q; run(); }
-  });
 
-  // expose for inline handlers / console debugging
-  window.mailforenAnalyze = { domainCards: domainCards, emailCards: emailCards, urlCards: urlCards, emlCards: emlCards };
+    // Clear & Export
+    state.elements.clearBtn.addEventListener('click', clearResults);
+    state.elements.exportBtn.addEventListener('click', exportResults);
+
+    // URL query param support
+    var q = new URLSearchParams(location.search).get('target');
+    var qType = new URLSearchParams(location.search).get('type') || 'email';
+    if (q) {
+      switchTab(qType);
+      var input = state.elements['search' + qType.charAt(0).toUpperCase() + qType.slice(1)];
+      if (input) input.value = q;
+      runAnalysis(qType, q);
+    }
+
+    // Billing toggle
+    var billingToggle = document.getElementById('billing-toggle');
+    if (billingToggle) {
+      billingToggle.addEventListener('change', function () {
+        var isYearly = this.checked;
+        document.querySelectorAll('.pricing-amount[data-monthly]').forEach(function (el) {
+          el.textContent = isYearly ? el.dataset.yearly : el.dataset.monthly;
+        });
+        document.querySelectorAll('.pricing-period').forEach(function (el) {
+          el.textContent = isYearly ? '/month (billed yearly)' : '/month';
+        });
+      });
+    }
+
+    // Init animations
+    initTerminalDemo();
+    initHeroCanvas();
+
+    // Expose for debugging
+    window.mailforenAnalyze = {
+      domainCards: domainCards,
+      emailCards: emailCards,
+      urlCards: urlCards,
+      emlCards: emlCards,
+      runAnalysis: runAnalysis,
+      runRaw: runRaw
+    };
+  });
 }
 
 // ---------------------------------------------------------------- node export (tests)

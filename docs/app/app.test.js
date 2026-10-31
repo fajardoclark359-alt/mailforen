@@ -24,7 +24,7 @@ const EML = [
   'Message-ID: <20261001@example.com>',
   'Subject: Verify your account',
   '',
-  'Click https://xn--aypayal-2ve.com/login now or http://203.0.113.9/pay via https://bit.ly/xyz'
+  'Click https://xn--bcher-kva.ch/login now or http://203.0.113.9/pay via https://bit.ly/xyz'
 ].join('\n');
 
 // target detection
@@ -69,7 +69,7 @@ assert.strictEqual(detectTypoSquat('gmail.com'), null, 'exact popular domain not
 assert.strictEqual(editDistance('kitten', 'sitting'), 3);
 
 // URL heuristics
-const puny = analyzeUrlHeuristics('https://xn--aypayal-2ve.com/login');
+const puny = analyzeUrlHeuristics('https://xn--bcher-kva.ch/login');
 assert.ok(puny.some(c => c.status === 'fail' && /punycode/i.test(c.title)), 'punycode flagged');
 const ip = analyzeUrlHeuristics('http://203.0.113.9/pay');
 assert.ok(ip.some(c => c.status === 'fail' && /IP literal/i.test(c.title)), 'IP host flagged');
@@ -81,7 +81,7 @@ assert.ok(!clean.some(c => c.status === 'fail'), 'clean URL has no fails');
 
 // URL extraction
 const urls = extractUrls(EML);
-assert.deepStrictEqual(urls, ['https://xn--aypayal-2ve.com/login', 'http://203.0.113.9/pay', 'https://bit.ly/xyz']);
+assert.deepStrictEqual(urls, ['https://xn--bcher-kva.ch/login', 'http://203.0.113.9/pay', 'https://bit.ly/xyz']);
 
 // full eml parse
 const eml = parseEml(EML, new Date('2026-10-30T00:00:00Z').getTime());
